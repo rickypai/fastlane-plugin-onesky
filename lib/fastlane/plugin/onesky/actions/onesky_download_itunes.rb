@@ -2,42 +2,41 @@ require 'json'
 
 module Fastlane
   module Actions
-    class OneskyUploadItunesAction < Action
+    class OneskyDownloadItunesAction < Action
       def self.run(params)
         containing = Helper.fastlane_enabled? ? FastlaneCore::FastlaneFolder.path : '.'
         dir = params[:metadata_path] || File.join(containing, 'metadata')
         locale = params[:metadata_locale]
 
-        UI.message "Loading app metadata"
-        metadata = {}
-        metadata["APP_NAME"] = read_metadata(filename: "name.txt", metadata_path: dir, locale: locale)
-        metadata["APP_DESCRIPTION"] = read_metadata(filename: "description.txt", metadata_path: dir, locale: locale)
-        metadata["APP_VERSION_DESCRIPTION"] = read_metadata(filename: "release_notes.txt", metadata_path: dir, locale: locale)
+        Actions.verify_gem!('onesky-ruby')
+        require 'onesky'
 
-        keyword_list = read_metadata(filename: "keywords.txt", metadata_path: dir, locale: locale)
-        UI.important("Use commas (,) to separate keywords so that multi-word phrases may be properly translated.") unless keyword_list.include? ","
-        keywords = keyword_list.split(',')
-        if keywords.length == 1
-          UI.message "Found 1 keyword"
-        else
-          UI.message "Found #{keywords.length} keywords"
-        end
-        metadata_keywords = {}
-        for keyword in keywords
-          metadata_keywords[keyword] = keyword
-        end
-        metadata["APP_KEYWORD"] = metadata_keywords
+        client = ::Onesky::Client.new(params[:public_key], params[:secret_key])
+        project = client.project(params[:project_id])
 
-        Dir.mktmpdir do |dir|
-          file = File.join(dir, 'AppDescription.json')
-          File.open(file, 'w') { |file| file.write(JSON.dump(metadata)) }
-          UI.message "Formatted app metadata for upload"
-          Helper::OneskyHelper.upload(public_key: params[:public_key], secret_key: params[:secret_key], project_id: params[:project_id], strings_file_path: file, strings_file_format: 'HIERARCHICAL_JSON', deprecate_missing: true, metadata: true)
+        UI.message "Downloading app metadata for #{locale}"
+        resp = project.export_app_description(locale: locale)
+
+        if resp.length == 0
+          UI.message "No metadata found for #{locale}"
+          return
         end
+        data = JSON.parse(resp)
+        metadata = data["data"]
+
+        write_metadata(value: metadata["APP_NAME"], filename: "name.txt", metadata_path: dir, locale: locale)
+        write_metadata(value: metadata["APP_DESCRIPTION"], filename: "description.txt", metadata_path: dir, locale: locale)
+        write_metadata(value: metadata["APP_VERSION_DESCRIPTION"], filename: "release_notes.txt", metadata_path: dir, locale: locale)
+
+        keyword_list = metadata["APP_KEYWORD"].values.join(",")
+        UI.important("Your keywords are #{keyword_list.length} characters long, but can't be more than 100.") unless keyword_list.length <= 100
+        write_metadata(value: keyword_list, filename: "keywords.txt", metadata_path: dir, locale: locale)
+
+        UI.success "Saved app metadata for #{locale}"
       end
 
       def self.description
-        'Upload Fastlane App Store metadata to a OneSky iTunes App Store project'
+        'Download Fastlane App Store metadata translations from a OneSky iTunes App Store project'
       end
 
       def self.authors
@@ -77,10 +76,9 @@ module Fastlane
                                          raise "Couldn't find metadata directory at path '#{value}'".red unless File.directory?(value)
                                        end),
           FastlaneCore::ConfigItem.new(key: :metadata_locale,
-                                       description: 'Locale of the master metadata',
+                                       description: 'Locale of the metadata to download',
                                        is_string: true,
-                                       optional: true,
-                                       default_value: 'en-US')
+                                       optional: false)
         ]
       end
 
@@ -91,12 +89,16 @@ module Fastlane
 
       private
 
-      def self.read_metadata(filename:, metadata_path:, locale: 'en-US')
+      def self.write_metadata(value:, filename:, metadata_path:, locale:)
         path = File.join(metadata_path, locale, filename)
+
+        require 'fileutils'
+        FileUtils.mkdir_p(File.dirname(path))
+
         begin
-          File.read(path).chomp
+          File.open(path, 'w') { |file| file.write(value) }
         rescue
-          raise "Problem reading app #{File.basename(filename).gsub('_', ' ')} at path '#{path}'".red
+          raise "Problem writing app #{File.basename(filename).gsub('_', ' ')} at path '#{path}'".red
         end
       end
 

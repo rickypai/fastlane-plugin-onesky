@@ -27,15 +27,6 @@ module Fastlane
           UI.error "Error uploading #{item} to OneSky, Status code is #{resp.code}"
         end
       end
-
-      def self.read_metadata(filename:, metadata_path:, locale: 'en-US')
-        path = File.join(metadata_path, locale, filename)
-        begin
-          File.read(path).chomp
-        rescue
-          raise "Problem reading app #{File.basename(filename).gsub('_', ' ')} at path '#{path}'".red
-        end
-      end
     end
   end
 end
