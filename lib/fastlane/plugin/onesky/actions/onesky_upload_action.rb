@@ -2,25 +2,7 @@ module Fastlane
   module Actions
     class OneskyUploadAction < Action
       def self.run(params)
-        Actions.verify_gem!('onesky-ruby')
-        require 'onesky'
-
-        client = ::Onesky::Client.new(params[:public_key], params[:secret_key])
-
-        project = client.project(params[:project_id])
-
-        UI.success 'Starting the upload to OneSky'
-        resp = project.upload_file(
-          file: params[:strings_file_path],
-          file_format: params[:strings_file_format],
-          is_keeping_all_strings: !params[:deprecate_missing]
-        )
-
-        if resp.code == 201
-          UI.success "#{File.basename params[:strings_file_path]} was successfully uploaded to project #{params[:project_id]} in OneSky"
-        else
-          UI.error "Error uploading file to OneSky, Status code is #{resp.code}"
-        end
+        Helper::OneskyHelper.upload(public_key: params[:public_key], secret_key: params[:secret_key], project_id: params[:project_id], strings_file_path: params[:strings_file_path], strings_file_format: params[:strings_file_format], deprecate_missing: params[:deprecate_missing])
       end
 
       def self.description
