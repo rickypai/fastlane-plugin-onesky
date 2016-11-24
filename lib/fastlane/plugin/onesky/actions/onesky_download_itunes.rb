@@ -92,6 +92,7 @@ module Fastlane
       def self.write_metadata(value:, filename:, metadata_path:, locale:)
         path = File.join(metadata_path, locale, filename)
 
+        Actions.verify_gem!('fileutils')
         require 'fileutils'
         FileUtils.mkdir_p(File.dirname(path))
 
