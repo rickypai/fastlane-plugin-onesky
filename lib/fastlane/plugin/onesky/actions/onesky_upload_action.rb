@@ -2,7 +2,7 @@ module Fastlane
   module Actions
     class OneskyUploadAction < Action
       def self.run(params)
-        Helper::OneskyHelper.upload(public_key: params[:public_key], secret_key: params[:secret_key], project_id: params[:project_id], strings_file_path: params[:strings_file_path], strings_file_format: params[:strings_file_format], deprecate_missing: params[:deprecate_missing])
+        Helper::OneskyHelper.upload(public_key: params[:public_key], secret_key: params[:secret_key], project_id: params[:project_id], strings_file_path: params[:strings_file_path], strings_file_format: params[:strings_file_format], skip_if_in_translation: params[:skip_if_in_translation], deprecate_missing: params[:deprecate_missing])
       end
 
       def self.description
@@ -54,6 +54,12 @@ module Fastlane
                                        verify_block: proc do |value|
                                          raise 'No file format given'.red unless value and !value.empty?
                                        end),
+          FastlaneCore::ConfigItem.new(key: :skip_if_in_translation,
+                                       env_name: 'ONESKY_SKIP_IF_IN_TRANSLATION',
+                                       description: 'Should we skip upload if the file is in translation in OneSky?',
+                                       is_string: false,
+                                       optional: true,
+                                       default_value: true),
           FastlaneCore::ConfigItem.new(key: :deprecate_missing,
                                        env_name: 'ONESKY_DEPRECATE_MISSING',
                                        description: 'Should missing phrases be marked as deprecated in OneSky?',

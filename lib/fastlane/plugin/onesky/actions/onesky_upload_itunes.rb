@@ -32,7 +32,7 @@ module Fastlane
           file = File.join(dir, 'AppDescription.json')
           File.open(file, 'w') { |file| file.write(JSON.dump(metadata)) }
           UI.message "Formatted app metadata for upload"
-          Helper::OneskyHelper.upload(public_key: params[:public_key], secret_key: params[:secret_key], project_id: params[:project_id], strings_file_path: file, strings_file_format: 'HIERARCHICAL_JSON', deprecate_missing: true, metadata: true)
+          Helper::OneskyHelper.upload(public_key: params[:public_key], secret_key: params[:secret_key], project_id: params[:project_id], strings_file_path: file, strings_file_format: 'HIERARCHICAL_JSON', skip_if_in_translation: params[:skip_if_in_translation], deprecate_missing: true, metadata: true)
         end
       end
 
@@ -69,6 +69,12 @@ module Fastlane
                                        verify_block: proc do |value|
                                          raise "No project id given, pass using `project_id: 'id'`".red unless value and !value.empty?
                                        end),
+          FastlaneCore::ConfigItem.new(key: :skip_if_in_translation,
+                                       env_name: 'ONESKY_SKIP_IF_IN_TRANSLATION',
+                                       description: 'Should we skip upload if the file is in translation in OneSky?',
+                                       is_string: false,
+                                       optional: true,
+                                       default_value: true),
           FastlaneCore::ConfigItem.new(key: :metadata_path,
                                        description: 'Path to the folder containing the metadata files',
                                        is_string: true,
