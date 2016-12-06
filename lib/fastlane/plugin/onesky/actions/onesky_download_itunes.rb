@@ -30,7 +30,17 @@ module Fastlane
         write_metadata(value: metadata["APP_VERSION_DESCRIPTION"], filename: "release_notes.txt", metadata_path: dir, locale: locale)
 
         keyword_list = metadata["APP_KEYWORD"].values.join(",")
-        UI.important("Your keywords are #{keyword_list.length} characters long, but can't be more than 100.") unless keyword_list.length <= 100
+        if keyword_list.length > 100
+          length = keyword_list.length
+          removed = []
+          sublist = metadata["APP_KEYWORD"].values.dup
+          while keyword_list.length > 100
+            removed << sublist.pop
+            keyword_list = sublist.join(",")
+          end
+          UI.important("Your keywords are #{length} characters long, but can't be more than 100.")
+          UI.important("Removed #{removed.join(", ")}. Your keywords are now #{keyword_list.length} characters. '#{keyword_list}'")
+        end
         write_metadata(value: keyword_list, filename: "keywords.txt", metadata_path: dir, locale: locale)
 
         UI.success "Saved app metadata for #{locale}"
