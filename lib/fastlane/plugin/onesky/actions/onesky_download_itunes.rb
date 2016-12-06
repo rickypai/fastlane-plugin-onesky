@@ -38,8 +38,14 @@ module Fastlane
             removed << sublist.pop
             keyword_list = sublist.join(",")
           end
+          skipped = []
+          metadata["APP_KEYWORD"].each do |k,v|
+            if removed.include? v
+              skipped << "#{v} (#{k})"
+            end
+          end
           UI.important("Your keywords are #{length} characters long, but can't be more than 100.")
-          UI.important("Removed #{removed.join(", ")}. Your keywords are now #{keyword_list.length} characters. '#{keyword_list}'")
+          UI.important("Removed #{skipped.join(", ")}. Your keywords are now #{keyword_list.length} characters. '#{keyword_list}'")
         end
         write_metadata(value: keyword_list, filename: "keywords.txt", metadata_path: dir, locale: locale)
 
