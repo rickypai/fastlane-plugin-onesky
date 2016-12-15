@@ -7,7 +7,8 @@ module Fastlane
       def self.run(params)
         containing = Helper.fastlane_enabled? ? FastlaneCore::FastlaneFolder.path : '.'
         dir = params[:metadata_path] || File.join(containing, 'metadata')
-        locale = params[:metadata_locale]
+        itunes_locale = params[:itunes_locale]
+        onesky_locale = params[:onesky_locale] || itunes_locale
 
         Actions.verify_gem!('onesky-ruby')
         require 'onesky'
@@ -15,19 +16,19 @@ module Fastlane
         client = ::Onesky::Client.new(params[:public_key], params[:secret_key])
         project = client.project(params[:project_id])
 
-        UI.message "Downloading app metadata for #{locale}"
-        resp = project.export_app_description(locale: locale)
+        UI.message "Downloading app metadata for #{onesky_locale}"
+        resp = project.export_app_description(locale: onesky_locale)
 
         if resp.length == 0
-          UI.message "No metadata found for #{locale}"
+          UI.message "No metadata found for #{onesky_locale}"
           return
         end
         data = JSON.parse(resp)
         metadata = data["data"]
 
-        write_metadata(value: metadata["APP_NAME"], filename: "name.txt", metadata_path: dir, locale: locale)
-        write_metadata(value: metadata["APP_DESCRIPTION"], filename: "description.txt", metadata_path: dir, locale: locale)
-        write_metadata(value: metadata["APP_VERSION_DESCRIPTION"], filename: "release_notes.txt", metadata_path: dir, locale: locale)
+        write_metadata(value: metadata["APP_NAME"], filename: "name.txt", metadata_path: dir, locale: itunes_locale)
+        write_metadata(value: metadata["APP_DESCRIPTION"], filename: "description.txt", metadata_path: dir, locale: itunes_locale)
+        write_metadata(value: metadata["APP_VERSION_DESCRIPTION"], filename: "release_notes.txt", metadata_path: dir, locale: itunes_locale)
 
         keyword_list = metadata["APP_KEYWORD"].values.join(",")
         if keyword_list.length > 100
@@ -47,9 +48,9 @@ module Fastlane
           UI.important("Your keywords are #{length} characters long, but can't be more than 100.")
           UI.important("Removed #{skipped.join(", ")}. Your keywords are now #{keyword_list.length} characters. '#{keyword_list}'")
         end
-        write_metadata(value: keyword_list, filename: "keywords.txt", metadata_path: dir, locale: locale)
+        write_metadata(value: keyword_list, filename: "keywords.txt", metadata_path: dir, locale: itunes_locale)
 
-        UI.success "Saved app metadata for #{locale}"
+        UI.success "Saved app metadata for #{itunes_locale}"
       end
 
       def self.description
@@ -92,8 +93,12 @@ module Fastlane
                                        verify_block: proc do |value|
                                          raise "Couldn't find metadata directory at path '#{value}'".red unless File.directory?(value)
                                        end),
-          FastlaneCore::ConfigItem.new(key: :metadata_locale,
-                                       description: 'Locale of the metadata to download',
+          FastlaneCore::ConfigItem.new(key: :onesky_locale,
+                                       description: 'Locale of the metadata to download from OneSky',
+                                       is_string: true,
+                                       optional: true),
+          FastlaneCore::ConfigItem.new(key: :itunes_locale,
+                                       description: 'Locale of the metadata in iTunes',
                                        is_string: true,
                                        optional: false)
         ]
