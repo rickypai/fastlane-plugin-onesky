@@ -4,7 +4,7 @@ module Fastlane
       # class methods that you define here become available in your action
       # as `Helper::OneskyHelper.your_method`
       #
-      def self.upload(public_key:, secret_key:, project_id:, strings_file_path:, strings_file_format:, deprecate_missing:, skip_if_in_translation: true, metadata: false)
+      def self.upload(public_key:, secret_key:, project_id:, strings_file_path:, strings_file_format:, deprecate_missing:, onesky_locale: nil, skip_if_in_translation: true, metadata: false)
         Actions.verify_gem!('onesky-ruby')
         require 'onesky'
 
@@ -21,12 +21,14 @@ module Fastlane
         resp = project.upload_file(
           file: strings_file_path,
           file_format: strings_file_format,
-          is_keeping_all_strings: !deprecate_missing
+          is_keeping_all_strings: !deprecate_missing,
+          locale: onesky_locale
         )
 
         if resp.code == 201
           item = metadata ? "App store metadata" : filename
-          UI.success "#{item} was successfully uploaded to project #{project_id} in OneSky"
+          destination = onesky_locale || "default_locale"
+          UI.success "#{item} was successfully uploaded to project #{project_id}/#{destination} in OneSky"
         else
           item = metadata ? "metadata" : "file"
           UI.error "Error uploading #{item} to OneSky, Status code is #{resp.code}"

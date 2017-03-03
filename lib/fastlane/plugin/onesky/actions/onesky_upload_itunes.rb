@@ -6,9 +6,9 @@ module Fastlane
       def self.run(params)
         containing = Helper.fastlane_enabled? ? FastlaneCore::FastlaneFolder.path : '.'
         dir = params[:metadata_path] || File.join(containing, 'metadata')
-        locale = params[:metadata_locale]
+        locale = params[:itunes_locale]
 
-        UI.message "Loading app metadata"
+        UI.message "Loading metadata from #{locale}"
         metadata = {}
         metadata["APP_NAME"] = read_metadata(filename: "name.txt", metadata_path: dir, locale: locale)
         metadata["APP_DESCRIPTION"] = read_metadata(filename: "description.txt", metadata_path: dir, locale: locale)
@@ -32,7 +32,7 @@ module Fastlane
           file = File.join(dir, 'AppDescription.json')
           File.open(file, 'w') { |file| file.write(JSON.dump(metadata)) }
           UI.message "Formatted app metadata for upload"
-          Helper::OneskyHelper.upload(public_key: params[:public_key], secret_key: params[:secret_key], project_id: params[:project_id], strings_file_path: file, strings_file_format: 'HIERARCHICAL_JSON', skip_if_in_translation: params[:skip_if_in_translation], deprecate_missing: true, metadata: true)
+          Helper::OneskyHelper.upload(public_key: params[:public_key], secret_key: params[:secret_key], project_id: params[:project_id], strings_file_path: file, strings_file_format: 'HIERARCHICAL_JSON', skip_if_in_translation: params[:skip_if_in_translation], onesky_locale: params[:onesky_locale], deprecate_missing: true, metadata: true)
         end
       end
 
@@ -82,8 +82,12 @@ module Fastlane
                                        verify_block: proc do |value|
                                          raise "Couldn't find metadata directory at path '#{value}'".red unless File.directory?(value)
                                        end),
-          FastlaneCore::ConfigItem.new(key: :metadata_locale,
-                                       description: 'Locale of the master metadata',
+          FastlaneCore::ConfigItem.new(key: :onesky_locale,
+                                       description: 'Locale of the metadata to upload to OneSky',
+                                       is_string: true,
+                                       optional: true),
+          FastlaneCore::ConfigItem.new(key: :itunes_locale,
+                                       description: 'Locale of the locale metadata directory for iTunes',
                                        is_string: true,
                                        optional: true,
                                        default_value: 'en-US')
