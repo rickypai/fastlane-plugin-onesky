@@ -47,7 +47,7 @@ module Fastlane
         fastest_time = option['seconds_to_complete'] * 1.0 / 86400.0
         requested_time = translator_type == 'preferred' ? preferred_time : fastest_time
 
-        UI.message "Received quote to translate #{count} words from #{quote['from_language']['english_name']} to #{quote['to_language']['english_name']} for #{option['total_cost']} in #{requested_time} days with the #{translator_type} translator."
+        UI.message "Received quote to translate #{count} words from #{quote['from_language']['english_name']} to #{quote['to_language']['english_name']} for $#{option['total_cost']} in #{requested_time} days with the #{translator_type} translator."
 
         if cost > params[:max_cost]
           UI.error "Translation cost $#{option['total_cost']} is over $#{params[:max_cost]}. Not automatically ordering translation."
