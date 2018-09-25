@@ -43,7 +43,7 @@ module Fastlane
         end
 
         translator_type = params[:translator_type]
-        preferred_time = option['preferred_translator']['seconds_to_complete'] * 1.0 / 86400.0
+        preferred_time = option['preferred_translator'].nil? ? 86400.0 * 10 : option['preferred_translator']['seconds_to_complete'] * 1.0 / 86400.0
         fastest_time = option['seconds_to_complete'] * 1.0 / 86400.0
         requested_time = translator_type == 'preferred' ? preferred_time : fastest_time
 
