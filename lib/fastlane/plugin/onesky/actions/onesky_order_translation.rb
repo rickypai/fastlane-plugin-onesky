@@ -11,6 +11,8 @@ module Fastlane
         resp = project.list_file
         files = JSON.parse(resp)["data"]
         filenames = files.map { |f| f["file_name"] }
+        
+        UI.message "Reviewing translation needs for #{params[:locale]}."
 
         resp = project.show_quotation(files: filenames, to_locale: params[:locale], is_including_not_translated: true, is_including_not_approved: true, is_including_outdated: true, specialization: "general")
         quote = JSON.parse(resp)["data"]
@@ -25,6 +27,13 @@ module Fastlane
           quote_order_type = 'translation_and_review'
         end
         option = quote[quote_order_type]
+
+        # This happens when this languge is up-to-date
+        if option.nil?
+          UI.message "No work needed for #{quote_order_type} order. Everything up-to-date."
+          return
+        end
+
         count = option['word_count']
         cost = option['total_cost'].to_f
 
