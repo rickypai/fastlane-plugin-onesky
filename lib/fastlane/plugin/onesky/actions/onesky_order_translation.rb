@@ -11,7 +11,7 @@ module Fastlane
         resp = project.list_file
         files = JSON.parse(resp)["data"]
         filenames = files.map { |f| f["file_name"] }
-        
+
         UI.message "Reviewing translation needs for #{params[:locale]}."
 
         resp = project.show_quotation(files: filenames, to_locale: params[:locale], is_including_not_translated: true, is_including_not_approved: true, is_including_outdated: true, specialization: "general")
@@ -122,6 +122,7 @@ module Fastlane
           FastlaneCore::ConfigItem.new(key: :max_days,
                                        env_name: 'ONESKY_MAX_DAYS',
                                        description: 'Maximum number of days for this translation',
+                                       is_string: false,
                                        optional: true,
                                        default_value: 3,
                                        verify_block: proc do |value|
